@@ -1,31 +1,27 @@
-use iced::widget::button;
+use iced::alignment;
 use iced::widget::column;
-use iced::widget::row;
+use iced::widget::container;
+use iced::widget::scrollable;
 use iced::widget::text;
 use iced::widget::text_input;
-use iced::Alignment;
+use iced::Color;
+use iced::Length;
 use iced::Sandbox;
 use iced::Settings;
 
 fn main() -> iced::Result {
-    println!("Hello");
-    let res = Counter::run(Settings::default());
-    println!("Goodbye");
-    res
+    Counter::run(Settings::default())
 }
 
 struct Counter {
-    value: i32,
+    translated_value: String,
     input_value: String,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    IncrementPressed,
-    DecrementPressed,
-    Reset,
-    SetInput(String),
-    SetButton,
+    InputChanged(String),
+    TranslateWord,
 }
 
 impl iced::Sandbox for Counter {
@@ -33,8 +29,8 @@ impl iced::Sandbox for Counter {
 
     fn new() -> Self {
         Self {
-            value: 0,
-            input_value: "".to_string(),
+            translated_value: "".to_owned(),
+            input_value: "".to_owned(),
         }
     }
 
@@ -44,46 +40,52 @@ impl iced::Sandbox for Counter {
 
     fn update(&mut self, message: Self::Message) {
         match message {
-            Message::IncrementPressed => {
-                self.value += 1;
-            }
-            Message::DecrementPressed => {
-                self.value -= 1;
-            }
-            Message::SetInput(value) => {
+            Message::InputChanged(value) => {
                 self.input_value = value;
             }
-            Message::SetButton => match self.input_value.parse::<i32>() {
-                Ok(value) => {
-                    self.value = value;
+            Message::TranslateWord => match self.input_value.split_whitespace().count() {
+                0 => {
+                    self.translated_value = "".to_owned();
                 }
-                Err(error) => {
-                    self.input_value = error.to_string();
+                1 => {
+                    self.translated_value =
+                        "Translation of \"".to_owned() + &self.input_value + "\".";
+                }
+                _ => {
+                    self.translated_value = "Error! I can only translate single words. The input \""
+                        .to_owned()
+                        + &self.input_value
+                        + "\" is not a single word."
                 }
             },
-            Message::Reset => {
-                self.value = 0;
-            }
         }
     }
 
     fn view(&self) -> iced::Element<'_, Self::Message> {
-        row![
-            column![
-                button("Increment").on_press(Message::IncrementPressed),
-                text(self.value).size(50),
-                button("Decrement").on_press(Message::DecrementPressed)
-            ],
-            column![
-                text_input("Value of counter", &self.input_value)
-                    .on_input(Message::SetInput)
-                    .on_submit(Message::SetButton),
-                button("Set").on_press(Message::SetButton),
-                button("Reset").on_press(Message::Reset)
-            ]
-        ]
-        .padding(20)
-        .align_items(Alignment::Center)
+        let title = text("Scrambler")
+            .width(Length::Fill)
+            .size(100)
+            .style(Color::from([0.5, 0.5, 0.5]))
+            .horizontal_alignment(alignment::Horizontal::Center);
+
+        let input = text_input("What needs to be translated?", &self.input_value)
+            .on_input(Message::InputChanged)
+            .on_submit(Message::TranslateWord)
+            .padding(15)
+            .size(30);
+
+        let translation = column![text(&self.translated_value)].spacing(10);
+
+        let content = column![title, input, translation]
+            .spacing(20)
+            .max_width(800);
+
+        scrollable(
+            container(content)
+                .width(Length::Fill)
+                .padding(40)
+                .center_x(),
+        )
         .into()
     }
 }
