@@ -12,10 +12,10 @@ use iced::Settings;
 pub mod translate;
 
 fn main() -> iced::Result {
-    Counter::run(Settings::default())
+    Scrambler::run(Settings::default())
 }
 
-struct Counter {
+struct Scrambler {
     translated_value: String,
     input_value: String,
 }
@@ -26,7 +26,7 @@ enum Message {
     TranslateWord,
 }
 
-impl iced::Sandbox for Counter {
+impl iced::Sandbox for Scrambler {
     type Message = Message;
 
     fn new() -> Self {
@@ -37,7 +37,7 @@ impl iced::Sandbox for Counter {
     }
 
     fn title(&self) -> String {
-        String::from("Counter - Iced")
+        String::from("Scrambler - Iced")
     }
 
     fn update(&mut self, message: Self::Message) {
