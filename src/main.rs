@@ -9,6 +9,8 @@ use iced::Length;
 use iced::Sandbox;
 use iced::Settings;
 
+pub mod translate;
+
 fn main() -> iced::Result {
     Counter::run(Settings::default())
 }
@@ -43,19 +45,12 @@ impl iced::Sandbox for Counter {
             Message::InputChanged(value) => {
                 self.input_value = value;
             }
-            Message::TranslateWord => match self.input_value.split_whitespace().count() {
-                0 => {
-                    self.translated_value = "".to_owned();
+            Message::TranslateWord => match translate::translate_word(&self.input_value) {
+                Ok(translation) => {
+                    self.translated_value = translation;
                 }
-                1 => {
-                    self.translated_value =
-                        "Translation of \"".to_owned() + &self.input_value + "\".";
-                }
-                _ => {
-                    self.translated_value = "Error! I can only translate single words. The input \""
-                        .to_owned()
-                        + &self.input_value
-                        + "\" is not a single word."
+                Err(error) => {
+                    self.translated_value = error;
                 }
             },
         }
