@@ -9,7 +9,7 @@ use iced::Length;
 use iced::Sandbox;
 use iced::Settings;
 
-pub mod translate;
+use scrambler::translate;
 
 fn main() -> iced::Result {
     Scrambler::run(Settings::default())
