@@ -1,4 +1,4 @@
-use scrambler::translate::translate_word;
+use scrambler::scrambler::translate_word;
 
 #[test]
 fn translate_single_word() {

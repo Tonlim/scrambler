@@ -9,13 +9,13 @@ use iced::Length;
 use iced::Sandbox;
 use iced::Settings;
 
-use scrambler::translate;
+use scrambler::scrambler;
 
 fn main() -> iced::Result {
-    Scrambler::run(Settings::default())
+    ScramblerUi::run(Settings::default())
 }
 
-struct Scrambler {
+struct ScramblerUi {
     translated_value: String,
     input_value: String,
 }
@@ -26,7 +26,7 @@ enum Message {
     TranslateWord,
 }
 
-impl iced::Sandbox for Scrambler {
+impl iced::Sandbox for ScramblerUi {
     type Message = Message;
 
     fn new() -> Self {
@@ -45,7 +45,7 @@ impl iced::Sandbox for Scrambler {
             Message::InputChanged(value) => {
                 self.input_value = value;
             }
-            Message::TranslateWord => match translate::translate_word(&self.input_value) {
+            Message::TranslateWord => match scrambler::translate_word(&self.input_value) {
                 Ok(translation) => {
                     self.translated_value = translation;
                 }
