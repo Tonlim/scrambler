@@ -1,1 +1,4 @@
 /target
+
+# This directory is created by the scrambler then doing `cargo run`.
+/scrambler_data

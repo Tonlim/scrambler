@@ -1,3 +1,5 @@
+pub mod storage;
+
 pub fn translate_word(word: &str) -> Result<String, String> {
     match word.split_whitespace().count() {
         0 => Ok("".to_owned()),

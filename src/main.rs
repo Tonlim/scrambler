@@ -30,6 +30,10 @@ impl iced::Sandbox for ScramblerUi {
     type Message = Message;
 
     fn new() -> Self {
+        // #TODO: move this to  place where we can do something with the error
+        // show it in a text field for example
+        // current idea: somehow trigger a "Startup" message and do it in the update. (Add a text widget for the error)
+        scrambler::storage::initialize_directory().unwrap();
         Self {
             translated_value: "".to_owned(),
             input_value: "".to_owned(),
@@ -41,6 +45,7 @@ impl iced::Sandbox for ScramblerUi {
     }
 
     fn update(&mut self, message: Self::Message) {
+        println!("update!");
         match message {
             Message::InputChanged(value) => {
                 self.input_value = value;
