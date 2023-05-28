@@ -45,7 +45,6 @@ impl iced::Sandbox for ScramblerUi {
     }
 
     fn update(&mut self, message: Self::Message) {
-        println!("update!");
         match message {
             Message::InputChanged(value) => {
                 self.input_value = value;
