@@ -1,5 +1,15 @@
 pub mod storage;
 
+#[derive(Debug, Clone)]
+pub struct Storage;
+
+pub async fn initialize() -> Result<Storage, String> {
+    match storage::initialize_directory() {
+        Ok(_) => Ok(Storage),
+        Err(message) => Err(message),
+    }
+}
+
 pub fn translate_word(word: &str) -> Result<String, String> {
     match word.split_whitespace().count() {
         0 => Ok("".to_owned()),

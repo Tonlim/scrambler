@@ -24,19 +24,9 @@ struct ScramblerUi {
 
 #[derive(Debug, Clone)]
 enum Message {
-    Loaded(Result<Storage, String>),
+    Loaded(Result<scrambler::Storage, String>),
     InputChanged(String),
     TranslateWord,
-}
-
-#[derive(Debug, Clone)]
-struct Storage;
-
-async fn initialize() -> Result<Storage, String> {
-    match scrambler::storage::initialize_directory() {
-        Ok(_) => Ok(Storage),
-        Err(message) => Err(message),
-    }
 }
 
 impl iced::Application for ScramblerUi {
@@ -55,7 +45,7 @@ impl iced::Application for ScramblerUi {
                 input_value: "".to_owned(),
                 messages: Vec::new(),
             },
-            Command::perform(initialize(), Message::Loaded),
+            Command::perform(scrambler::initialize(), Message::Loaded),
         )
     }
 
@@ -65,8 +55,8 @@ impl iced::Application for ScramblerUi {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
-            Message::Loaded(Ok(Storage)) => {
-                // #TODO
+            Message::Loaded(Ok(_storage)) => {
+                // #TODO do something with storage
             }
             Message::Loaded(Err(message)) => {
                 self.messages.push(message);
