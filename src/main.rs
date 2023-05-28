@@ -4,9 +4,10 @@ use iced::widget::container;
 use iced::widget::scrollable;
 use iced::widget::text;
 use iced::widget::text_input;
+use iced::Application;
 use iced::Color;
+use iced::Command;
 use iced::Length;
-use iced::Sandbox;
 use iced::Settings;
 
 use scrambler::scrambler;
@@ -18,34 +19,58 @@ fn main() -> iced::Result {
 struct ScramblerUi {
     translated_value: String,
     input_value: String,
+    messages: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
+    Loaded(Result<Storage, String>),
     InputChanged(String),
     TranslateWord,
 }
 
-impl iced::Sandbox for ScramblerUi {
+#[derive(Debug, Clone)]
+struct Storage;
+
+async fn initialize() -> Result<Storage, String> {
+    match scrambler::storage::initialize_directory() {
+        Ok(_) => Ok(Storage),
+        Err(message) => Err(message),
+    }
+}
+
+impl iced::Application for ScramblerUi {
     type Message = Message;
 
-    fn new() -> Self {
-        // #TODO: move this to  place where we can do something with the error
-        // show it in a text field for example
-        // current idea: somehow trigger a "Startup" message and do it in the update. (Add a text widget for the error)
-        scrambler::storage::initialize_directory().unwrap();
-        Self {
-            translated_value: "".to_owned(),
-            input_value: "".to_owned(),
-        }
+    type Executor = iced::executor::Default;
+
+    type Theme = iced::theme::Theme;
+
+    type Flags = ();
+
+    fn new(_: ()) -> (Self, Command<Message>) {
+        (
+            Self {
+                translated_value: "".to_owned(),
+                input_value: "".to_owned(),
+                messages: Vec::new(),
+            },
+            Command::perform(initialize(), Message::Loaded),
+        )
     }
 
     fn title(&self) -> String {
         String::from("Scrambler - Iced")
     }
 
-    fn update(&mut self, message: Self::Message) {
+    fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
+            Message::Loaded(Ok(Storage)) => {
+                // #TODO
+            }
+            Message::Loaded(Err(message)) => {
+                self.messages.push(message);
+            }
             Message::InputChanged(value) => {
                 self.input_value = value;
             }
@@ -58,6 +83,8 @@ impl iced::Sandbox for ScramblerUi {
                 }
             },
         }
+
+        Command::none()
     }
 
     fn view(&self) -> iced::Element<'_, Self::Message> {
@@ -75,7 +102,9 @@ impl iced::Sandbox for ScramblerUi {
 
         let translation = column![text(&self.translated_value)].spacing(10);
 
-        let content = column![title, input, translation]
+        let messages = text(&self.messages.join("\n")).style(Color::from_rgb(255.0, 0.0, 0.0));
+
+        let content = column![title, input, translation, messages]
             .spacing(20)
             .max_width(800);
 
