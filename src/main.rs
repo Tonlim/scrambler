@@ -24,8 +24,8 @@ struct ScramblerUi {
 
 #[derive(Debug, Clone)]
 enum Message {
-    // A bit ugly to put a string here instead of the strongly typed error. But `Box<dyn Error>` cannot be used across threads, which is a requirement for UI stuff.
-    // So, String it us.
+    // We are using `String` as error type here. That's no problem because the only thing we'll do is show them anyway.
+    // Also, we can't use `Box<dyn Error>` here because this enum is used across threads.
     Loaded(Result<scrambler::Storage, String>),
     InputChanged(String),
     TranslateWord,
@@ -47,7 +47,6 @@ impl iced::Application for ScramblerUi {
                 input_value: "".to_owned(),
                 messages: Vec::new(),
             },
-            // TODO: generic function that unwraps Box<dyn Error> into a string
             Command::perform(scrambler::initialize(), |value| {
                 Message::Loaded(value.map_err(|error| error.to_string()))
             }),

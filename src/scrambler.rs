@@ -2,6 +2,9 @@ use std::{collections::HashMap, error::Error, fmt};
 
 pub mod storage;
 
+// TODO: make this object oriented?
+// make `initialize_directory` a `new`
+// make all other functions `impl`s on this struct
 #[derive(Debug, Clone)]
 pub struct Storage;
 
