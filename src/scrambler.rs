@@ -5,12 +5,6 @@ use std::fmt;
 
 pub mod storage;
 
-// TODO: make this object oriented?
-// make `initialize_directory` a `new`
-// make all other functions `impl`s on this struct
-#[derive(Debug, Clone)]
-pub struct Storage;
-
 #[derive(Debug)]
 pub struct ScramblerError(String);
 
@@ -22,9 +16,8 @@ impl fmt::Display for ScramblerError {
 
 impl Error for ScramblerError {}
 
-pub async fn initialize() -> Result<Storage, Box<dyn Error>> {
-    storage::initialize_directory()?;
-    Ok(Storage)
+pub async fn initialize() -> Result<(), Box<dyn Error>> {
+    storage::initialize_directory()
 }
 
 pub fn translate_word(word: &str) -> Result<String, Box<dyn Error>> {

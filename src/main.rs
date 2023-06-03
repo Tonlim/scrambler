@@ -28,7 +28,7 @@ struct ScramblerUi {
 enum Message {
     // We are using `String` as error type here. That's no problem because the only thing we'll do is show them anyway.
     // Also, we can't use `Box<dyn Error>` here because this enum is used across threads.
-    Loaded(Result<scrambler::Storage, String>),
+    Loaded(Result<(), String>),
     InputChanged(String),
     TranslateWord,
 }

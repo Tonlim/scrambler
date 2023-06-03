@@ -7,6 +7,49 @@ use std::fs::OpenOptions;
 use std::io::BufReader;
 use std::io::BufWriter;
 
+pub fn initialize_directory() -> Result<(), Box<dyn Error>> {
+    fs::create_dir_all("scrambler_data").map_err(|inner| CreateDirectoryError {
+        name: "scrambler_data",
+        source: inner,
+    })?;
+    Ok(())
+}
+
+pub fn load_translated_words() -> Result<HashMap<String, String>, Box<dyn Error>> {
+    let file =
+        File::open("scrambler_data/translated_words.json").map_err(|inner| LoadFileError {
+            name: "scrambler_data/translated_words.json",
+            source: inner,
+        })?;
+
+    let reader = BufReader::new(file);
+    let result = serde_json::from_reader(reader).map_err(|inner| LoadFileError {
+        name: "scrambler_data/translated_words.json",
+        source: inner,
+    })?;
+    Ok(result)
+}
+
+pub fn save_translated_words(words: &HashMap<String, String>) -> Result<(), Box<dyn Error>> {
+    let file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open("scrambler_data/translated_words.json")
+        .map_err(|inner| SaveFileError {
+            name: "scrambler_data/translated_words.json",
+            source: inner,
+        })?;
+
+    let writer = BufWriter::new(file);
+    serde_json::to_writer(writer, words).map_err(|inner| SaveFileError {
+        name: "scrambler_data/translated_words.json",
+        source: inner,
+    })?;
+
+    Ok(())
+}
+
 #[derive(Debug)]
 struct CreateDirectoryError {
     name: &'static str,
@@ -71,47 +114,4 @@ impl<TError: std::error::Error + 'static> Error for SaveFileError<TError> {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.source)
     }
-}
-
-pub fn initialize_directory() -> Result<(), Box<dyn Error>> {
-    fs::create_dir_all("scrambler_data").map_err(|inner| CreateDirectoryError {
-        name: "scrambler_data",
-        source: inner,
-    })?;
-    Ok(())
-}
-
-pub fn load_translated_words() -> Result<HashMap<String, String>, Box<dyn Error>> {
-    let file =
-        File::open("scrambler_data/translated_words.json").map_err(|inner| LoadFileError {
-            name: "scrambler_data/translated_words.json",
-            source: inner,
-        })?;
-
-    let reader = BufReader::new(file);
-    let result = serde_json::from_reader(reader).map_err(|inner| LoadFileError {
-        name: "scrambler_data/translated_words.json",
-        source: inner,
-    })?;
-    Ok(result)
-}
-
-pub fn save_translated_words(words: &HashMap<String, String>) -> Result<(), Box<dyn Error>> {
-    let file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open("scrambler_data/translated_words.json")
-        .map_err(|inner| SaveFileError {
-            name: "scrambler_data/translated_words.json",
-            source: inner,
-        })?;
-
-    let writer = BufWriter::new(file);
-    serde_json::to_writer(writer, words).map_err(|inner| SaveFileError {
-        name: "scrambler_data/translated_words.json",
-        source: inner,
-    })?;
-
-    Ok(())
 }
