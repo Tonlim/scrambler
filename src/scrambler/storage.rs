@@ -7,7 +7,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct CreateDirectoryError {
+struct CreateDirectoryError {
     name: &'static str,
     source: std::io::Error,
 }
@@ -29,7 +29,7 @@ impl Error for CreateDirectoryError {
 }
 
 #[derive(Debug)]
-pub struct LoadFileError<TError: std::error::Error> {
+struct LoadFileError<TError: std::error::Error> {
     name: &'static str,
     source: TError,
 }
@@ -51,7 +51,7 @@ impl<TError: std::error::Error + 'static> Error for LoadFileError<TError> {
 }
 
 #[derive(Debug)]
-pub struct SaveFileError<TError: std::error::Error> {
+struct SaveFileError<TError: std::error::Error> {
     name: &'static str,
     source: TError,
 }
@@ -72,11 +72,12 @@ impl<TError: std::error::Error + 'static> Error for SaveFileError<TError> {
     }
 }
 
-pub fn initialize_directory() -> Result<(), CreateDirectoryError> {
+pub fn initialize_directory() -> Result<(), Box<dyn Error>> {
     fs::create_dir_all("scrambler_data").map_err(|inner| CreateDirectoryError {
         name: "scrambler_data",
         source: inner,
-    })
+    })?;
+    Ok(())
 }
 
 pub fn load_translated_words() -> Result<HashMap<String, String>, Box<dyn Error>> {
