@@ -14,6 +14,7 @@ use log::error;
 use scrambler::scrambler;
 
 fn main() -> iced::Result {
+    // TODO: create widget that shows logs?
     env_logger::init();
     ScramblerUi::run(Settings::default())
 }
@@ -21,14 +22,10 @@ fn main() -> iced::Result {
 struct ScramblerUi {
     translated_value: String,
     input_value: String,
-    messages: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    // We are using `String` as error type here. That's no problem because the only thing we'll do is show them anyway.
-    // Also, we can't use `Box<dyn Error>` here because this enum is used across threads.
-    Loaded(Result<(), String>),
     InputChanged(String),
     TranslateWord,
 }
@@ -47,14 +44,8 @@ impl iced::Application for ScramblerUi {
             Self {
                 translated_value: "".to_owned(),
                 input_value: "".to_owned(),
-                messages: Vec::new(),
             },
-            Command::perform(scrambler::initialize(), |value| {
-                Message::Loaded(value.map_err(|error| {
-                    error!("{}", error.to_string());
-                    error.to_string()
-                }))
-            }),
+            Command::none(),
         )
     }
 
@@ -64,12 +55,6 @@ impl iced::Application for ScramblerUi {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
-            Message::Loaded(Ok(_storage)) => {
-                // #TODO do something with storage
-            }
-            Message::Loaded(Err(message)) => {
-                self.messages.push(message.to_string());
-            }
             Message::InputChanged(value) => {
                 self.input_value = value;
             }
@@ -102,9 +87,7 @@ impl iced::Application for ScramblerUi {
 
         let translation = column![text(&self.translated_value)].spacing(10);
 
-        let messages = text(&self.messages.join("\n")).style(Color::from_rgb(255.0, 0.0, 0.0));
-
-        let content = column![title, input, translation, messages]
+        let content = column![title, input, translation]
             .spacing(20)
             .max_width(800);
 

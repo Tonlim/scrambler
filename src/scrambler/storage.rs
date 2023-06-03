@@ -7,15 +7,8 @@ use std::fs::OpenOptions;
 use std::io::BufReader;
 use std::io::BufWriter;
 
-pub fn initialize_directory() -> Result<(), Box<dyn Error>> {
-    fs::create_dir_all("scrambler_data").map_err(|inner| CreateDirectoryError {
-        name: "scrambler_data",
-        source: inner,
-    })?;
-    Ok(())
-}
-
 pub fn load_translated_words() -> Result<HashMap<String, String>, Box<dyn Error>> {
+    initialize_directory()?;
     let file =
         File::open("scrambler_data/translated_words.json").map_err(|inner| LoadFileError {
             name: "scrambler_data/translated_words.json",
@@ -31,6 +24,7 @@ pub fn load_translated_words() -> Result<HashMap<String, String>, Box<dyn Error>
 }
 
 pub fn save_translated_words(words: &HashMap<String, String>) -> Result<(), Box<dyn Error>> {
+    initialize_directory()?;
     let file = OpenOptions::new()
         .write(true)
         .create(true)
@@ -47,6 +41,14 @@ pub fn save_translated_words(words: &HashMap<String, String>) -> Result<(), Box<
         source: inner,
     })?;
 
+    Ok(())
+}
+
+fn initialize_directory() -> Result<(), Box<dyn Error>> {
+    fs::create_dir_all("scrambler_data").map_err(|inner| CreateDirectoryError {
+        name: "scrambler_data",
+        source: inner,
+    })?;
     Ok(())
 }
 

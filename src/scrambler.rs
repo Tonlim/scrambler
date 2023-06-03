@@ -3,22 +3,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 
-pub mod storage;
-
-#[derive(Debug)]
-pub struct ScramblerError(String);
-
-impl fmt::Display for ScramblerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for ScramblerError {}
-
-pub async fn initialize() -> Result<(), Box<dyn Error>> {
-    storage::initialize_directory()
-}
+mod storage;
 
 pub fn translate_word(word: &str) -> Result<String, Box<dyn Error>> {
     match word.split_whitespace().count() {
@@ -66,6 +51,17 @@ fn translate_word_impl(word: &str) -> Result<String, Box<dyn Error>> {
         .expect("If the word did not exist, we just inserted it. It should still be there.");
     Ok(result.clone())
 }
+
+#[derive(Debug)]
+struct ScramblerError(String);
+
+impl fmt::Display for ScramblerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Error for ScramblerError {}
 
 #[cfg(test)]
 mod tests {
