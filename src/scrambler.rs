@@ -1,4 +1,5 @@
 use log::error;
+use std::cmp::min;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
@@ -28,18 +29,7 @@ fn translate_word_impl(word: &str) -> Result<String, Box<dyn Error>> {
     };
 
     if !known_translations.contains_key(word) {
-        // TODO: generate a new word
-        known_translations.insert(
-            word.to_owned(),
-            "Translation of \"".to_owned()
-                + word
-                + "\"."
-                + &std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs()
-                    .to_string(),
-        );
+        known_translations.insert(word.to_owned(), generate_new_translation(word)?);
     }
 
     if let Err(error) = storage::save_translated_words(&known_translations) {
@@ -50,6 +40,21 @@ fn translate_word_impl(word: &str) -> Result<String, Box<dyn Error>> {
         .remove(word)
         .expect("If the word did not exist, we just inserted it. It should still be there.");
     Ok(result.clone())
+}
+
+fn generate_new_translation(word: &str) -> Result<String, Box<dyn Error>> {
+    error!("Using dummy alphabet of `abc`. Proper alphabet is not implemented yet.");
+    let dummy_alphabet = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
+    storage::save_alphabet(&dummy_alphabet)?;
+
+    let alphabet = storage::load_alphabet()?;
+
+    error!("Using dummy translation generation by simply replacing the first three letters with the alphabet. Proper generation is not implemented yet.");
+    let mut result = word.to_owned();
+    let range = min(result.len(), alphabet.len());
+    result.replace_range(0..range, &alphabet.join("")[0..range]);
+
+    Ok(result)
 }
 
 #[derive(Debug)]

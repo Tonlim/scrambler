@@ -9,19 +9,23 @@ use std::io::BufReader;
 use std::io::BufWriter;
 
 const DATA_DIRECTORY: &str = "scrambler_data";
-const TRANSLATED_WORDS: &str = "translated_words.json";
-const TRANSLATED_WORDS_FILE: &str = concatcp!(DATA_DIRECTORY, "/", TRANSLATED_WORDS);
+
+const TRANSLATED_WORDS_FILENAME: &str = "translated_words.json";
+const TRANSLATED_WORDS_PATH: &str = concatcp!(DATA_DIRECTORY, "/", TRANSLATED_WORDS_FILENAME);
+
+const ALPHABET_FILENAME: &str = "alphabet.json";
+const ALPHABET_PATH: &str = concatcp!(DATA_DIRECTORY, "/", ALPHABET_FILENAME);
 
 pub fn load_translated_words() -> Result<HashMap<String, String>, Box<dyn Error>> {
     initialize_directory()?;
-    let file = File::open(TRANSLATED_WORDS_FILE).map_err(|inner| LoadFileError {
-        name: TRANSLATED_WORDS_FILE,
+    let file = File::open(TRANSLATED_WORDS_PATH).map_err(|inner| LoadFileError {
+        name: TRANSLATED_WORDS_PATH,
         source: inner,
     })?;
 
     let reader = BufReader::new(file);
     let result = serde_json::from_reader(reader).map_err(|inner| LoadFileError {
-        name: TRANSLATED_WORDS_FILE,
+        name: TRANSLATED_WORDS_PATH,
         source: inner,
     })?;
     Ok(result)
@@ -33,18 +37,53 @@ pub fn save_translated_words(words: &HashMap<String, String>) -> Result<(), Box<
         .write(true)
         .create(true)
         .truncate(true)
-        .open(TRANSLATED_WORDS_FILE)
+        .open(TRANSLATED_WORDS_PATH)
         .map_err(|inner| SaveFileError {
-            name: TRANSLATED_WORDS_FILE,
+            name: TRANSLATED_WORDS_PATH,
             source: inner,
         })?;
 
     let writer = BufWriter::new(file);
-    serde_json::to_writer(writer, words).map_err(|inner| SaveFileError {
-        name: TRANSLATED_WORDS_FILE,
+    serde_json::to_writer_pretty(writer, words).map_err(|inner| SaveFileError {
+        name: TRANSLATED_WORDS_PATH,
         source: inner,
     })?;
 
+    Ok(())
+}
+
+pub fn load_alphabet() -> Result<Vec<String>, Box<dyn Error>> {
+    initialize_directory()?;
+    let file = File::open(ALPHABET_PATH).map_err(|inner| LoadFileError {
+        name: ALPHABET_PATH,
+        source: inner,
+    })?;
+
+    let reader = BufReader::new(file);
+    let result = serde_json::from_reader(reader).map_err(|inner| LoadFileError {
+        name: ALPHABET_PATH,
+        source: inner,
+    })?;
+    Ok(result)
+}
+
+pub fn save_alphabet(alphabet: &Vec<String>) -> Result<(), Box<dyn Error>> {
+    initialize_directory()?;
+    let file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(ALPHABET_PATH)
+        .map_err(|inner| SaveFileError {
+            name: ALPHABET_PATH,
+            source: inner,
+        })?;
+
+    let writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, alphabet).map_err(|inner| SaveFileError {
+        name: ALPHABET_PATH,
+        source: inner,
+    })?;
     Ok(())
 }
 
