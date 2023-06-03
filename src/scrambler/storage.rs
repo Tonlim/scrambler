@@ -60,7 +60,7 @@ impl<TError: std::error::Error> Display for SaveFileError<TError> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Issue encountered loading JSON from file '{}': {}",
+            "Issue encountered save JSON to file '{}': {}",
             self.name, self.source
         )
     }

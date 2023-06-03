@@ -1,3 +1,4 @@
+use log::error;
 use std::{collections::HashMap, error::Error, fmt};
 
 pub mod storage;
@@ -41,8 +42,7 @@ fn translate_word_impl(word: &str) -> Result<String, Box<dyn Error>> {
     let mut known_translations = match storage::load_translated_words() {
         Ok(translations) => translations,
         Err(error) => {
-            // TODO: log error via a logging framework
-            println!("{error}");
+            error!("{error}");
             HashMap::new()
         }
     };
@@ -63,8 +63,7 @@ fn translate_word_impl(word: &str) -> Result<String, Box<dyn Error>> {
     }
 
     if let Err(error) = storage::save_translated_words(&known_translations) {
-        // TODO: log error via a logging framework
-        println!("{error}");
+        error!("{error}");
     }
 
     let result = known_translations

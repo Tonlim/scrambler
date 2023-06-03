@@ -9,10 +9,12 @@ use iced::Color;
 use iced::Command;
 use iced::Length;
 use iced::Settings;
+use log::error;
 
 use scrambler::scrambler;
 
 fn main() -> iced::Result {
+    env_logger::init();
     ScramblerUi::run(Settings::default())
 }
 
@@ -48,7 +50,10 @@ impl iced::Application for ScramblerUi {
                 messages: Vec::new(),
             },
             Command::perform(scrambler::initialize(), |value| {
-                Message::Loaded(value.map_err(|error| error.to_string()))
+                Message::Loaded(value.map_err(|error| {
+                    error!("{}", error.to_string());
+                    error.to_string()
+                }))
             }),
         )
     }
@@ -73,6 +78,7 @@ impl iced::Application for ScramblerUi {
                     self.translated_value = translation;
                 }
                 Err(error) => {
+                    error!("{}", error.to_string());
                     self.translated_value = error.to_string();
                 }
             },
