@@ -1,14 +1,47 @@
 use log::error;
+use serde::Deserialize;
+use serde::Serialize;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
+use std::time::SystemTime;
 
 mod storage;
 
-pub fn translate_word(word: &str) -> Result<String, Box<dyn Error>> {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Translation {
+    pub translation: String,
+    pub time_added: SystemTime,
+}
+
+impl Translation {
+    fn new(translation: String) -> Translation {
+        Translation {
+            translation,
+            time_added: SystemTime::now(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Glyph {
+    pub symbol: String,
+    pub time_added: SystemTime,
+}
+
+impl Glyph {
+    fn new(symbol: String) -> Glyph {
+        Glyph {
+            symbol,
+            time_added: SystemTime::now(),
+        }
+    }
+}
+
+pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {
     match word.split_whitespace().count() {
-        0 => Ok("".to_owned()),
+        0 => Ok(Translation::new("".to_owned())),
         1 => translate_word_impl(word),
         _ => Err(ScramblerError(
             "Error! I can only translate single words. The input \"".to_owned()
@@ -19,7 +52,7 @@ pub fn translate_word(word: &str) -> Result<String, Box<dyn Error>> {
     }
 }
 
-fn translate_word_impl(word: &str) -> Result<String, Box<dyn Error>> {
+fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
     let mut known_translations = match storage::load_translated_words() {
         Ok(translations) => translations,
         Err(error) => {
@@ -42,9 +75,13 @@ fn translate_word_impl(word: &str) -> Result<String, Box<dyn Error>> {
     Ok(result.clone())
 }
 
-fn generate_new_translation(word: &str) -> Result<String, Box<dyn Error>> {
+fn generate_new_translation(word: &str) -> Result<Translation, Box<dyn Error>> {
     error!("Using dummy alphabet of `abc`. Proper alphabet is not implemented yet.");
-    let dummy_alphabet = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
+    let dummy_alphabet = vec![
+        Glyph::new("a".to_owned()),
+        Glyph::new("b".to_owned()),
+        Glyph::new("c".to_owned()),
+    ];
     storage::save_alphabet(&dummy_alphabet)?;
 
     let alphabet = storage::load_alphabet()?;
@@ -52,9 +89,16 @@ fn generate_new_translation(word: &str) -> Result<String, Box<dyn Error>> {
     error!("Using dummy translation generation by simply replacing the first three letters with the alphabet. Proper generation is not implemented yet.");
     let mut result = word.to_owned();
     let range = min(result.len(), alphabet.len());
-    result.replace_range(0..range, &alphabet.join("")[0..range]);
+    result.replace_range(
+        0..range,
+        &alphabet
+            .iter()
+            .map(|glyph| glyph.symbol.as_str())
+            .collect::<Vec<&str>>()
+            .join("")[0..range],
+    );
 
-    Ok(result)
+    Ok(Translation::new(result))
 }
 
 #[derive(Debug)]
@@ -76,14 +120,14 @@ mod tests {
     fn translate_single_word() {
         let result = translate_word("word");
         assert!(result.is_ok());
-        assert_eq!(result.ok().unwrap(), "Translation of \"word\".");
+        assert_eq!(result.ok().unwrap().translation, "Translation of \"word\".");
     }
 
     #[test]
     fn translate_empty() {
         let result = translate_word("");
         assert!(result.is_ok());
-        assert_eq!(result.ok().unwrap(), "");
+        assert_eq!(result.ok().unwrap().translation, "");
     }
 
     #[test]

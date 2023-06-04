@@ -1,6 +1,9 @@
+use chrono::DateTime;
+use chrono::Utc;
 use iced::alignment;
 use iced::widget::column;
 use iced::widget::container;
+use iced::widget::row;
 use iced::widget::scrollable;
 use iced::widget::text;
 use iced::widget::text_input;
@@ -11,6 +14,7 @@ use iced::Length;
 use iced::Settings;
 use log::error;
 
+use ::scrambler::scrambler::Translation;
 use scrambler::scrambler;
 
 fn main() -> iced::Result {
@@ -20,7 +24,7 @@ fn main() -> iced::Result {
 }
 
 struct ScramblerUi {
-    translated_value: String,
+    translated_value: Option<Translation>,
     input_value: String,
 }
 
@@ -42,7 +46,7 @@ impl iced::Application for ScramblerUi {
     fn new(_: ()) -> (Self, Command<Message>) {
         (
             Self {
-                translated_value: "".to_owned(),
+                translated_value: None,
                 input_value: "".to_owned(),
             },
             Command::none(),
@@ -60,11 +64,11 @@ impl iced::Application for ScramblerUi {
             }
             Message::TranslateWord => match scrambler::translate_word(&self.input_value) {
                 Ok(translation) => {
-                    self.translated_value = translation;
+                    self.translated_value = Some(translation);
                 }
                 Err(error) => {
                     error!("{}", error.to_string());
-                    self.translated_value = error.to_string();
+                    self.translated_value = None;
                 }
             },
         }
@@ -85,7 +89,14 @@ impl iced::Application for ScramblerUi {
             .padding(15)
             .size(30);
 
-        let translation = column![text(&self.translated_value)].spacing(10);
+        let translation;
+        if let Some(value) = &self.translated_value {
+            let timestamp: DateTime<Utc> = value.time_added.into();
+            let timestamp = timestamp.to_rfc3339();
+            translation = row![text(&value.translation), text(timestamp)].spacing(10);
+        } else {
+            translation = row![];
+        }
 
         let content = column![title, input, translation]
             .spacing(20)

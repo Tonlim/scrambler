@@ -8,6 +8,9 @@ use std::fs::OpenOptions;
 use std::io::BufReader;
 use std::io::BufWriter;
 
+use super::Glyph;
+use super::Translation;
+
 const DATA_DIRECTORY: &str = "scrambler_data";
 
 const TRANSLATED_WORDS_FILENAME: &str = "translated_words.json";
@@ -16,19 +19,19 @@ const TRANSLATED_WORDS_PATH: &str = concatcp!(DATA_DIRECTORY, "/", TRANSLATED_WO
 const ALPHABET_FILENAME: &str = "alphabet.json";
 const ALPHABET_PATH: &str = concatcp!(DATA_DIRECTORY, "/", ALPHABET_FILENAME);
 
-pub fn load_translated_words() -> Result<HashMap<String, String>, Box<dyn Error>> {
+pub fn load_translated_words() -> Result<HashMap<String, Translation>, Box<dyn Error>> {
     load_from_file(TRANSLATED_WORDS_PATH)
 }
 
-pub fn save_translated_words(words: &HashMap<String, String>) -> Result<(), Box<dyn Error>> {
+pub fn save_translated_words(words: &HashMap<String, Translation>) -> Result<(), Box<dyn Error>> {
     save_to_file(words, TRANSLATED_WORDS_PATH)
 }
 
-pub fn load_alphabet() -> Result<Vec<String>, Box<dyn Error>> {
+pub fn load_alphabet() -> Result<Vec<Glyph>, Box<dyn Error>> {
     load_from_file(ALPHABET_PATH)
 }
 
-pub fn save_alphabet(alphabet: &Vec<String>) -> Result<(), Box<dyn Error>> {
+pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
     save_to_file(alphabet, ALPHABET_PATH)
 }
 
