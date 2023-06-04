@@ -27,7 +27,7 @@ Apart from the `_previous.json` mechanism, no backups or restores are provided b
 
 ### Drow word rules
 - A word consists of letters taken from the [Phoenician](https://en.wikipedia.org/wiki/Paleo-Hebrew_alphabet), [Greek](https://en.wikipedia.org/wiki/Greek_alphabet), and [Elder Futhark(Runic)](https://en.wikipedia.org/wiki/Elder_Futhark) alphabets.
-- A word has similar length as its English translation. To be precise, the length of a word ranges from half the English length to double the English length. If rounding is needed, round towards the extremes: towards 0 for the lower bound and towards infinity for the upper bound.
+- A word has similar length as its English translation. To be precise, the length of a word ranges from half the English length to double the English length. If rounding is needed, round towards the extremes: towards 0 for the lower bound (but clamp to 1, of course) and towards infinity for the upper bound.
 - The same letter cannot appear more than two times consequently.
 
 ### Mapping tool
