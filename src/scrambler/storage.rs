@@ -1,4 +1,5 @@
 use log::error;
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
@@ -22,7 +23,11 @@ pub fn load_translated_words() -> Result<HashMap<String, Translation>, Box<dyn E
 }
 
 pub fn save_translated_words(words: &HashMap<String, Translation>) -> Result<(), Box<dyn Error>> {
-    save_to_file(words, TRANSLATED_WORDS_FILENAME)
+    let mut sorted_words = BTreeMap::new();
+    for word in words {
+        sorted_words.insert(word.0, word.1);
+    }
+    save_to_file(&sorted_words, TRANSLATED_WORDS_FILENAME)
 }
 
 pub fn load_alphabet() -> Result<Vec<Glyph>, Box<dyn Error>> {
@@ -30,7 +35,9 @@ pub fn load_alphabet() -> Result<Vec<Glyph>, Box<dyn Error>> {
 }
 
 pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
-    save_to_file(alphabet, ALPHABET_FILENAME)
+    let mut sorted_alphabet = alphabet.clone();
+    sorted_alphabet.sort();
+    save_to_file(&sorted_alphabet, ALPHABET_FILENAME)
 }
 
 fn save_to_file<TData>(data: &TData, filename: &str) -> Result<(), Box<dyn Error>>

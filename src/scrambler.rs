@@ -24,7 +24,7 @@ impl Translation {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Glyph {
     pub symbol: String,
     pub time_added: SystemTime,
