@@ -97,9 +97,19 @@ impl iced::Application for ScramblerUi {
             translation = row![];
         }
 
-        let content = column![title, input, translation]
-            .spacing(20)
-            .max_width(800);
+        let lookup_feature =
+            text("For looking up existing words, please search the file in the data directory.");
+        let remove_alphabet_feature = text("For removing a character from the alphabet, please remove it from the file in the data directory.");
+
+        let content = column![
+            title,
+            input,
+            translation,
+            lookup_feature,
+            remove_alphabet_feature
+        ]
+        .spacing(20)
+        .max_width(800);
 
         scrollable(
             container(content)
