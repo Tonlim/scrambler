@@ -18,7 +18,6 @@ use ::scrambler::scrambler::Translation;
 use scrambler::scrambler;
 
 fn main() -> iced::Result {
-    // TODO: create widget that shows logs?
     env_logger::init();
     ScramblerUi::run(Settings::default())
 }
