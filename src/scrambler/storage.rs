@@ -17,6 +17,7 @@ const BACKUP_SUFFIX: &str = "_previous";
 const EXTENSION: &str = "json";
 const TRANSLATED_WORDS_FILENAME: &str = "translated_words";
 const ALPHABET_FILENAME: &str = "alphabet";
+const BLOCKED_TRANSLATIONS_FILENAME: &str = "blocked_translations";
 
 pub fn load_translated_words() -> Result<HashMap<String, Translation>, Box<dyn Error>> {
     load_from_file(TRANSLATED_WORDS_FILENAME)
@@ -38,6 +39,16 @@ pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
     let mut sorted_alphabet = alphabet.clone();
     sorted_alphabet.sort();
     save_to_file(&sorted_alphabet, ALPHABET_FILENAME)
+}
+
+pub fn load_blocked_translations() -> Result<Vec<Translation>, Box<dyn Error>> {
+    load_from_file(BLOCKED_TRANSLATIONS_FILENAME)
+}
+
+pub fn save_blocked_translations(translations: Vec<Translation>) -> Result<(), Box<dyn Error>> {
+    let mut sorted_translations = translations.clone();
+    sorted_translations.sort_by(|a, b| a.translation.cmp(&b.translation));
+    save_to_file(&sorted_translations, BLOCKED_TRANSLATIONS_FILENAME)
 }
 
 fn save_to_file<TData>(data: &TData, filename: &str) -> Result<(), Box<dyn Error>>

@@ -62,7 +62,19 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
     };
 
     if !known_translations.contains_key(word) {
-        known_translations.insert(word.to_owned(), generate_new_translation(word)?);
+        error!("Using dummy block list of `1`. Proper block list is not implemented yet.");
+        storage::save_blocked_translations(vec![Translation::new("1".to_owned())])?;
+
+        let blocked_translations = storage::load_blocked_translations()?;
+
+        let mut new_translation = generate_new_translation(word)?;
+        while blocked_translations.iter().any(|blocked_translation| {
+            blocked_translation.translation == new_translation.translation
+        }) {
+            new_translation = generate_new_translation(word)?;
+        }
+
+        known_translations.insert(word.to_owned(), new_translation);
     }
 
     if let Err(error) = storage::save_translated_words(&known_translations) {
