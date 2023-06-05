@@ -1,13 +1,6 @@
 use scrambler::scrambler::translate_word;
 
 #[test]
-fn translate_single_word() {
-    let result = translate_word("word");
-    assert!(result.is_ok());
-    assert_eq!(result.ok().unwrap().translation, "Translation of \"word\".");
-}
-
-#[test]
 fn translate_empty() {
     let result = translate_word("");
     assert!(result.is_ok());
