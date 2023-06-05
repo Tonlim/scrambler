@@ -1,12 +1,12 @@
 use log::error;
 use serde::Deserialize;
 use serde::Serialize;
-use std::cmp::min;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::time::SystemTime;
 
+mod generator;
 mod storage;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -67,11 +67,11 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
 
         let blocked_translations = storage::load_blocked_translations()?;
 
-        let mut new_translation = generate_new_translation(word)?;
+        let mut new_translation = generator::new_translation(word)?;
         while blocked_translations.iter().any(|blocked_translation| {
             blocked_translation.translation == new_translation.translation
         }) {
-            new_translation = generate_new_translation(word)?;
+            new_translation = generator::new_translation(word)?;
         }
 
         known_translations.insert(word.to_owned(), new_translation);
@@ -85,32 +85,6 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
         .remove(word)
         .expect("If the word did not exist, we just inserted it. It should still be there.");
     Ok(result.clone())
-}
-
-fn generate_new_translation(word: &str) -> Result<Translation, Box<dyn Error>> {
-    error!("Using dummy alphabet of `abc`. Proper alphabet is not implemented yet.");
-    let dummy_alphabet = vec![
-        Glyph::new("a".to_owned()),
-        Glyph::new("b".to_owned()),
-        Glyph::new("c".to_owned()),
-    ];
-    storage::save_alphabet(&dummy_alphabet)?;
-
-    let alphabet = storage::load_alphabet()?;
-
-    error!("Using dummy translation generation by simply replacing the first three letters with the alphabet. Proper generation is not implemented yet.");
-    let mut result = word.to_owned();
-    let range = min(result.len(), alphabet.len());
-    result.replace_range(
-        0..range,
-        &alphabet
-            .iter()
-            .map(|glyph| glyph.symbol.as_str())
-            .collect::<Vec<&str>>()
-            .join("")[0..range],
-    );
-
-    Ok(Translation::new(result))
 }
 
 #[derive(Debug)]
