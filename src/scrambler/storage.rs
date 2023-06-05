@@ -62,7 +62,7 @@ where
 
     if let Err(error) = std::fs::rename(&path, &backup_path) {
         error!(
-            "Failed to move {path} to {backup_path}. The backup is NOT made! OS error: {error}."
+            "Failed to move `{path}` to `{backup_path}`. The backup is NOT made! OS error: {error}."
         );
     }
 
@@ -95,7 +95,7 @@ where
         Ok(result) => Ok(result),
         Err(error) => {
             let backup_path = build_backup_path(filename);
-            error!("Failed to load data from {path}. Falling back to {backup_path}. Reason for failure: {error}");
+            error!("Failed to load data from `{path}`. Falling back to `{backup_path}`. Reason for failure: {error}");
             load_from_file_impl(&backup_path)
         }
     }
