@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use log::error;
 use serde::Deserialize;
 use serde::Serialize;
@@ -68,9 +69,8 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
         let blocked_translations = storage::load_blocked_translations()?;
 
         let mut new_translation = generator::new_translation(word)?;
-        while blocked_translations.iter().any(|blocked_translation| {
-            blocked_translation.translation == new_translation.translation
-        }) {
+        while translation_is_rejected(&new_translation, &blocked_translations, &known_translations)
+        {
             new_translation = generator::new_translation(word)?;
         }
 
@@ -87,6 +87,34 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
     Ok(result.clone())
 }
 
+fn translation_is_rejected(
+    new_translation: &Translation,
+    blocked_translations: &Vec<Translation>,
+    known_translations: &HashMap<String, Translation>,
+) -> bool {
+    translation_is_blocked(new_translation, blocked_translations)
+        || translation_already_exists(new_translation, known_translations)
+}
+
+fn translation_is_blocked(
+    new_translation: &Translation,
+    blocked_translations: &Vec<Translation>,
+) -> bool {
+    blocked_translations
+        .iter()
+        .any(|blocked_translation| blocked_translation.translation == new_translation.translation)
+}
+
+fn translation_already_exists(
+    new_translation: &Translation,
+    known_translations: &HashMap<String, Translation>,
+) -> bool {
+    known_translations
+        .iter()
+        .map(|(_key, value)| &value.translation)
+        .contains(&new_translation.translation)
+}
+
 #[derive(Debug)]
 struct ScramblerError(String);
 
@@ -100,7 +128,7 @@ impl Error for ScramblerError {}
 
 #[cfg(test)]
 mod tests {
-    use super::translate_word;
+    use super::*;
 
     #[test]
     fn translate_single_word() {
@@ -120,5 +148,29 @@ mod tests {
     fn cant_translate_two_words() {
         let result = translate_word("word another one");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn reject_blocked_translation() {
+        let new = Translation::new("foo".to_owned());
+        let blocked = vec![Translation::new("foo".to_owned())];
+        let known = HashMap::from([("bar".to_owned(), Translation::new("drink".to_owned()))]);
+        assert!(translation_is_rejected(&new, &blocked, &known));
+    }
+
+    #[test]
+    fn reject_known_translation() {
+        let new = Translation::new("foo".to_owned());
+        let blocked = vec![Translation::new("bar".to_owned())];
+        let known = HashMap::from([("hello".to_owned(), Translation::new("foo".to_owned()))]);
+        assert!(translation_is_rejected(&new, &blocked, &known));
+    }
+
+    #[test]
+    fn accept_new_translation() {
+        let new = Translation::new("foo".to_owned());
+        let blocked = vec![Translation::new("bar".to_owned())];
+        let known = HashMap::from([("hello".to_owned(), Translation::new("world".to_owned()))]);
+        assert!(!translation_is_rejected(&new, &blocked, &known));
     }
 }
