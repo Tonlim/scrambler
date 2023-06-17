@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::time::SystemTime;
+use unicode_segmentation::UnicodeSegmentation;
 
 mod generator;
 mod storage;
@@ -61,11 +62,32 @@ pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {
 /// * `character` - A single character to be added to the alphabet.
 ///                 A character is defined as a unicode grapheme cluster.
 ///                 See http://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries
+///                 The character must not be whitespace as adding whitespace to the alphabet
+///                 break the whole "translated words are of equivalent size" rule.
 ///
-/// This function panics if more the input does not contain a single character.
+/// This function panics if the input does not contain a single non-whitespace character.
 pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
-    // todo
-    Err(ScramblerError(character.to_owned()).into())
+    let char_count = character.graphemes(true).count();
+    if char_count == 0 {
+        panic!("Expected a single character. Received no character.");
+    }
+
+    if char_count > 1 {
+        panic!("Expected a single character. Received multiple characters.")
+    }
+
+    if character.trim().is_empty() {
+        panic!("Expected a non-whitespace character. Received whitespace.")
+    }
+
+    let mut alphabet = storage::load_alphabet()?;
+    let glyph = Glyph::new(character.to_owned());
+
+    if !alphabet.contains(&glyph) {
+        alphabet.push(glyph)
+    }
+
+    storage::save_alphabet(&alphabet)
 }
 
 fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {

@@ -1,7 +1,6 @@
 use std::error::Error;
 
 use itertools::Itertools;
-use log::error;
 use rand::Rng;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -11,14 +10,6 @@ use super::Glyph;
 use super::Translation;
 
 pub fn new_translation(word: &str) -> Result<Translation, Box<dyn Error>> {
-    error!("Using dummy alphabet of `abc`. Proper alphabet is not implemented yet.");
-    let dummy_alphabet = vec![
-        Glyph::new("a".to_owned()),
-        Glyph::new("b".to_owned()),
-        Glyph::new("c".to_owned()),
-    ];
-    storage::save_alphabet(&dummy_alphabet)?;
-
     let alphabet = storage::load_alphabet()?;
 
     let original_length = word.graphemes(true).count();

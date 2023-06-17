@@ -16,6 +16,7 @@ use log::error;
 
 use ::scrambler::scrambler::Translation;
 use scrambler::scrambler;
+use unicode_segmentation::UnicodeSegmentation;
 
 fn main() -> iced::Result {
     env_logger::init();
@@ -75,7 +76,12 @@ impl iced::Application for ScramblerUi {
                 }
             },
             Message::AlphabetInputChanged(value) => {
-                self.alphabet_input = value;
+                let char_count = value.graphemes(true).count();
+                // We only accept a single non-whitespace character.
+                // And of course an empty field. Otherwise, people can't delete the character.
+                if char_count == 0 || (char_count == 1 && !value.trim().is_empty()) {
+                    self.alphabet_input = value;
+                }
             }
             Message::AddToAlphabet => {
                 if let Err(error) = scrambler::add_to_alphabet(&self.alphabet_input) {
@@ -123,16 +129,17 @@ impl iced::Application for ScramblerUi {
 
         let remove_alphabet_feature = text("For removing a character from the alphabet, please remove it from the file in the data directory.");
 
-        let content = column![
-            title,
-            input,
-            translation,
-            lookup_feature,
-            alphabet_input,
-            remove_alphabet_feature
-        ]
-        .spacing(20)
-        .max_width(800);
+        let translation_column = column![input, translation, lookup_feature]
+            .spacing(20)
+            .max_width(800);
+
+        let alphabet_column = column![alphabet_input, remove_alphabet_feature]
+            .spacing(20)
+            .max_width(800);
+
+        let body = row![translation_column, alphabet_column];
+
+        let content = column![title, body].spacing(20).max_width(1600);
 
         scrollable(
             container(content)
