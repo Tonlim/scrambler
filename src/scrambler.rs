@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use log::error;
+use regex::Regex;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -76,16 +77,24 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
         }
     };
 
-    if !known_translations.contains_key(word) {
+    let word = strip_punctuation(word);
+    if word.trim().is_empty() {
+        return Err(ScramblerError(
+            "I cannot translate a string that consists of only whitespace!".to_owned(),
+        )
+        .into());
+    }
+
+    if !known_translations.contains_key(&word) {
         error!("Using dummy block list of `1`. Proper block list is not implemented yet.");
         storage::save_blocked_translations(vec![Translation::new("1".to_owned())])?;
 
         let blocked_translations = storage::load_blocked_translations()?;
 
-        let mut new_translation = generator::new_translation(word)?;
+        let mut new_translation = generator::new_translation(&word)?;
         while translation_is_rejected(&new_translation, &blocked_translations, &known_translations)
         {
-            new_translation = generator::new_translation(word)?;
+            new_translation = generator::new_translation(&word)?;
         }
 
         known_translations.insert(word.to_owned(), new_translation);
@@ -96,7 +105,7 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
     }
 
     let result = known_translations
-        .remove(word)
+        .remove(&word)
         .expect("If the word did not exist, we just inserted it. It should still be there.");
     Ok(result.clone())
 }
@@ -127,6 +136,12 @@ fn translation_already_exists(
         .iter()
         .map(|(_key, value)| &value.translation)
         .contains(&new_translation.translation)
+}
+
+fn strip_punctuation(word: &str) -> String {
+    let regex = Regex::new(r"([[:punct:]])").expect("Hardcoded regex must be valid");
+    let result = regex.replace_all(word, "");
+    result.into_owned()
 }
 
 #[derive(Debug)]
@@ -179,5 +194,53 @@ mod tests {
         let blocked = vec![Translation::new("bar".to_owned())];
         let known = HashMap::from([("hello".to_owned(), Translation::new("world".to_owned()))]);
         assert!(!translation_is_rejected(&new, &blocked, &known));
+    }
+
+    #[test]
+    fn strip_dot() {
+        let result = strip_punctuation("a.b");
+        assert_eq!(result, "ab")
+    }
+
+    #[test]
+    fn strip_leading_dot() {
+        let result = strip_punctuation(".ab");
+        assert_eq!(result, "ab")
+    }
+
+    #[test]
+    fn strip_trailing_dot() {
+        let result = strip_punctuation("ab.");
+        assert_eq!(result, "ab")
+    }
+
+    #[test]
+    fn strip_multiple_dots() {
+        let result = strip_punctuation("a.b.c");
+        assert_eq!(result, "abc")
+    }
+
+    #[test]
+    fn strip_multiple_consecutive_dots() {
+        let result = strip_punctuation("a..b");
+        assert_eq!(result, "ab")
+    }
+
+    #[test]
+    fn strip_all_dots() {
+        let result = strip_punctuation(".a..b.c.");
+        assert_eq!(result, "abc")
+    }
+
+    #[test]
+    fn strip_question_marks() {
+        let result = strip_punctuation("a?b");
+        assert_eq!(result, "ab")
+    }
+
+    #[test]
+    fn strip_no_spaces() {
+        let result = strip_punctuation("a b.");
+        assert_eq!(result, "a b")
     }
 }
