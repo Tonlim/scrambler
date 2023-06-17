@@ -12,11 +12,13 @@ use iced::Color;
 use iced::Command;
 use iced::Length;
 use iced::Settings;
+use itertools::Itertools;
 use log::error;
+use unicode_segmentation::UnicodeSegmentation;
 
+use ::scrambler::scrambler::Glyph;
 use ::scrambler::scrambler::Translation;
 use scrambler::scrambler;
-use unicode_segmentation::UnicodeSegmentation;
 
 fn main() -> iced::Result {
     env_logger::init();
@@ -27,6 +29,7 @@ struct ScramblerUi {
     translated_value: Option<Translation>,
     input_value: String,
     alphabet_input: String,
+    current_alphabet: Vec<Glyph>,
 }
 
 #[derive(Debug, Clone)]
@@ -52,7 +55,9 @@ impl iced::Application for ScramblerUi {
                 translated_value: None,
                 input_value: "".to_owned(),
                 alphabet_input: "".to_owned(),
+                current_alphabet: Vec::new(),
             },
+            // todo load alphabet from file. See git history
             Command::none(),
         )
     }
@@ -88,6 +93,11 @@ impl iced::Application for ScramblerUi {
                     error!("{}", error.to_string());
                 }
                 self.alphabet_input = "".to_owned();
+
+                match scrambler::storage::load_alphabet() {
+                    Ok(alphabet) => self.current_alphabet = alphabet,
+                    Err(error) => error!("{}", error.to_string()),
+                }
             }
         }
 
@@ -129,11 +139,20 @@ impl iced::Application for ScramblerUi {
 
         let remove_alphabet_feature = text("For removing a character from the alphabet, please remove it from the file in the data directory.");
 
+        let alphabet_text = text(
+            "The current alphabet is: ".to_owned()
+                + &self
+                    .current_alphabet
+                    .iter()
+                    .map(|glyph| &glyph.symbol)
+                    .join(""),
+        );
+
         let translation_column = column![input, translation, lookup_feature]
             .spacing(20)
             .max_width(800);
 
-        let alphabet_column = column![alphabet_input, remove_alphabet_feature]
+        let alphabet_column = column![alphabet_input, remove_alphabet_feature, alphabet_text]
             .spacing(20)
             .max_width(800);
 

@@ -10,7 +10,7 @@ use std::time::SystemTime;
 use unicode_segmentation::UnicodeSegmentation;
 
 mod generator;
-mod storage;
+pub mod storage;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Translation {
@@ -27,6 +27,7 @@ impl Translation {
     }
 }
 
+// todo remove Eq and Ord in favor of lambda functions when sorting/searching
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Glyph {
     pub symbol: String,
@@ -83,6 +84,8 @@ pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
     let mut alphabet = storage::load_alphabet()?;
     let glyph = Glyph::new(character.to_owned());
 
+    // todo: this check always succeeds. The glyphs have a timestamp that is always different...
+    // use iter().any() instead
     if !alphabet.contains(&glyph) {
         alphabet.push(glyph)
     }

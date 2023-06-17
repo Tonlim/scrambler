@@ -37,6 +37,7 @@ pub fn load_alphabet() -> Result<Vec<Glyph>, Box<dyn Error>> {
 
 pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
     let mut sorted_alphabet = alphabet.clone();
+    // todo this sort also includes timestamps. Should only sort on symbol
     sorted_alphabet.sort();
     save_to_file(&sorted_alphabet, ALPHABET_FILENAME)
 }
