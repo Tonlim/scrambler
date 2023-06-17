@@ -25,12 +25,15 @@ fn main() -> iced::Result {
 struct ScramblerUi {
     translated_value: Option<Translation>,
     input_value: String,
+    alphabet_input: String,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     InputChanged(String),
     TranslateWord,
+    AlphabetInputChanged(String),
+    AddToAlphabet,
 }
 
 impl iced::Application for ScramblerUi {
@@ -47,6 +50,7 @@ impl iced::Application for ScramblerUi {
             Self {
                 translated_value: None,
                 input_value: "".to_owned(),
+                alphabet_input: "".to_owned(),
             },
             Command::none(),
         )
@@ -70,6 +74,15 @@ impl iced::Application for ScramblerUi {
                     self.translated_value = None;
                 }
             },
+            Message::AlphabetInputChanged(value) => {
+                self.alphabet_input = value;
+            }
+            Message::AddToAlphabet => {
+                if let Err(error) = scrambler::add_to_alphabet(&self.alphabet_input) {
+                    error!("{}", error.to_string());
+                }
+                self.alphabet_input = "".to_owned();
+            }
         }
 
         Command::none()
@@ -99,6 +112,15 @@ impl iced::Application for ScramblerUi {
 
         let lookup_feature =
             text("For looking up existing words, please search the file in the data directory.");
+
+        let alphabet_input = text_input(
+            "Which letter needs to be added to the alphabet?",
+            &self.alphabet_input,
+        )
+        .on_input(Message::AlphabetInputChanged)
+        .on_submit(Message::AddToAlphabet)
+        .padding(15);
+
         let remove_alphabet_feature = text("For removing a character from the alphabet, please remove it from the file in the data directory.");
 
         let content = column![
@@ -106,6 +128,7 @@ impl iced::Application for ScramblerUi {
             input,
             translation,
             lookup_feature,
+            alphabet_input,
             remove_alphabet_feature
         ]
         .spacing(20)

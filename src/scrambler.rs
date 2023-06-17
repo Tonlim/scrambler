@@ -53,6 +53,20 @@ pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {
     }
 }
 
+/// Adds a character to the alphabet used to generate new words
+///
+/// # Arguments
+///
+/// * `character` - A single character to be added to the alphabet.
+///                 A character is defined as a unicode grapheme cluster.
+///                 See http://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries
+///
+/// This function panics if more the input does not contain a single character.
+pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
+    // todo
+    Err(ScramblerError(character.to_owned()).into())
+}
+
 fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
     let mut known_translations = match storage::load_translated_words() {
         Ok(translations) => translations,
