@@ -1,6 +1,7 @@
 use chrono::DateTime;
 use chrono::Utc;
 use iced::alignment;
+use iced::widget::button;
 use iced::widget::column;
 use iced::widget::container;
 use iced::widget::row;
@@ -27,6 +28,7 @@ fn main() -> iced::Result {
 
 struct ScramblerUi {
     translated_value: Option<Translation>,
+    suggested_translation: Option<Translation>,
     input_value: String,
     alphabet_input: String,
     current_alphabet: Vec<Glyph>,
@@ -36,6 +38,9 @@ struct ScramblerUi {
 enum Message {
     InputChanged(String),
     TranslateWord,
+    TranslationAccepted(String, Translation),
+    TranslationRejected,
+    TranslationBlocked(String),
     AlphabetInputChanged(String),
     AddToAlphabet,
     AlphabetLoaded(Result<Vec<Glyph>, String>),
@@ -54,11 +59,11 @@ impl iced::Application for ScramblerUi {
         (
             Self {
                 translated_value: None,
+                suggested_translation: None,
                 input_value: "".to_owned(),
                 alphabet_input: "".to_owned(),
                 current_alphabet: Vec::new(),
             },
-            // todo load alphabet from file. See git history
             Command::perform(
                 scrambler::storage::load_alphabet_async(),
                 Message::AlphabetLoaded,
@@ -75,15 +80,20 @@ impl iced::Application for ScramblerUi {
             Message::InputChanged(value) => {
                 self.input_value = value;
             }
-            Message::TranslateWord => match scrambler::translate_word(&self.input_value) {
-                Ok(translation) => {
-                    self.translated_value = Some(translation);
+            Message::TranslateWord => self.translate_input(),
+            Message::TranslationAccepted(original, translation) => {
+                if let Err(error) = scrambler::save_translation(&original, translation) {
+                    error!("{error}");
                 }
-                Err(error) => {
-                    error!("{}", error.to_string());
-                    self.translated_value = None;
+                self.translate_input();
+            }
+            Message::TranslationRejected => self.translate_input(),
+            Message::TranslationBlocked(word) => {
+                if let Err(error) = scrambler::add_to_block_list(&word) {
+                    error!("{error}");
                 }
-            },
+                self.translate_input();
+            }
             Message::AlphabetInputChanged(value) => {
                 let char_count = value.graphemes(true).count();
                 // We only accept a single non-whitespace character.
@@ -136,6 +146,25 @@ impl iced::Application for ScramblerUi {
             translation = row![];
         }
 
+        let suggested_translation;
+        if let Some(value) = &self.suggested_translation {
+            let accept_button = button("Accept translation").on_press(
+                Message::TranslationAccepted(self.input_value.clone(), value.clone()),
+            );
+            let reset_button =
+                button("Generate new translation").on_press(Message::TranslationRejected);
+            let block_button = button("Block translation and generate a new one")
+                .on_press(Message::TranslationBlocked(value.translation.clone()));
+            suggested_translation = row![
+                text(&value.translation),
+                accept_button,
+                reset_button,
+                block_button
+            ];
+        } else {
+            suggested_translation = row![];
+        }
+
         let lookup_feature =
             text("For looking up existing words, please search the file in the data directory.");
 
@@ -158,7 +187,7 @@ impl iced::Application for ScramblerUi {
                     .join(""),
         );
 
-        let translation_column = column![input, translation, lookup_feature]
+        let translation_column = column![input, translation, suggested_translation, lookup_feature]
             .spacing(20)
             .max_width(800);
 
@@ -177,5 +206,25 @@ impl iced::Application for ScramblerUi {
                 .center_x(),
         )
         .into()
+    }
+}
+
+impl ScramblerUi {
+    fn translate_input(&mut self) {
+        self.translated_value = None;
+        self.suggested_translation = None;
+
+        match scrambler::translate_word(&self.input_value) {
+            Ok(translation) => match scrambler::is_word_known(&self.input_value) {
+                Ok(known) => match known {
+                    true => self.translated_value = Some(translation),
+                    false => self.suggested_translation = Some(translation),
+                },
+                Err(error) => error!("{error}"),
+            },
+            Err(error) => {
+                error!("{error}");
+            }
+        }
     }
 }

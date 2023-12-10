@@ -42,6 +42,18 @@ impl Glyph {
     }
 }
 
+pub fn is_word_known(word: &str) -> Result<bool, Box<dyn Error>> {
+    let word = strip_punctuation(word);
+    if word.trim().is_empty() {
+        return Ok(true);
+    }
+
+    let blocked_translations = storage::load_blocked_translations()?;
+    let known_translations = storage::load_translated_words()?;
+    Ok(translation_is_blocked(&word, &blocked_translations)
+        || word_has_translation(&word, &known_translations))
+}
+
 pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {
     match word.split_whitespace().count() {
         0 => Ok(Translation::new("".to_owned())),
@@ -53,6 +65,19 @@ pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {
         )
         .into()),
     }
+}
+
+pub fn save_translation(word: &str, translation: Translation) -> Result<(), Box<dyn Error>> {
+    let mut known_translations = match storage::load_translated_words() {
+        Ok(translations) => translations,
+        Err(error) => {
+            error!("{error}");
+            HashMap::new()
+        }
+    };
+    known_translations.insert(word.to_owned(), translation);
+
+    storage::save_translated_words(&known_translations)
 }
 
 /// Adds a character to the alphabet used to generate new words
@@ -99,8 +124,12 @@ pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
     storage::save_alphabet(&current_alphabet)
 }
 
+pub fn add_to_block_list(word: &str) -> Result<(), Box<dyn Error>> {
+    todo!("Implement block list {word}");
+}
+
 fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
-    let mut known_translations = match storage::load_translated_words() {
+    let known_translations = match storage::load_translated_words() {
         Ok(translations) => translations,
         Err(error) => {
             error!("{error}");
@@ -116,29 +145,21 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
         .into());
     }
 
-    if !known_translations.contains_key(&word) {
-        error!("Using dummy block list of `1`. Proper block list is not implemented yet.");
-        storage::save_blocked_translations(vec![Translation::new("1".to_owned())])?;
-
-        let blocked_translations = storage::load_blocked_translations()?;
-
-        let mut new_translation = generator::new_translation(&word)?;
-        while translation_is_rejected(&new_translation, &blocked_translations, &known_translations)
-        {
-            new_translation = generator::new_translation(&word)?;
-        }
-
-        known_translations.insert(word.to_owned(), new_translation);
+    if known_translations.contains_key(&word) {
+        return Ok(known_translations[&word].clone());
     }
 
-    if let Err(error) = storage::save_translated_words(&known_translations) {
-        error!("{error}");
+    error!("Using dummy block list of `1`. Proper block list is not implemented yet.");
+    storage::save_blocked_translations(vec![Translation::new("1".to_owned())])?;
+
+    let blocked_translations = storage::load_blocked_translations()?;
+
+    let mut new_translation = generator::new_translation(&word)?;
+    while translation_is_rejected(&new_translation, &blocked_translations, &known_translations) {
+        new_translation = generator::new_translation(&word)?;
     }
 
-    let result = known_translations
-        .remove(&word)
-        .expect("If the word did not exist, we just inserted it. It should still be there.");
-    Ok(result.clone())
+    Ok(new_translation)
 }
 
 fn translation_is_rejected(
@@ -146,17 +167,18 @@ fn translation_is_rejected(
     blocked_translations: &Vec<Translation>,
     known_translations: &HashMap<String, Translation>,
 ) -> bool {
-    translation_is_blocked(new_translation, blocked_translations)
+    translation_is_blocked(&new_translation.translation, blocked_translations)
         || translation_already_exists(new_translation, known_translations)
 }
 
-fn translation_is_blocked(
-    new_translation: &Translation,
-    blocked_translations: &Vec<Translation>,
-) -> bool {
+fn translation_is_blocked(word: &str, blocked_translations: &Vec<Translation>) -> bool {
     blocked_translations
         .iter()
-        .any(|blocked_translation| blocked_translation.translation == new_translation.translation)
+        .any(|blocked_translation| blocked_translation.translation == word)
+}
+
+fn word_has_translation(word: &str, known_translations: &HashMap<String, Translation>) -> bool {
+    known_translations.contains_key(word)
 }
 
 fn translation_already_exists(
