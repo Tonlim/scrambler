@@ -1,6 +1,5 @@
 # Backlog
 
-- proper error handling on alphabet input
 - display existing translations
 - display existing alphabet (without having to add new letter first)
 - add to block list

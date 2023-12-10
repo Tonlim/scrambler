@@ -89,14 +89,16 @@ impl iced::Application for ScramblerUi {
                 }
             }
             Message::AddToAlphabet => {
-                if let Err(error) = scrambler::add_to_alphabet(&self.alphabet_input) {
-                    error!("{}", error.to_string());
-                }
-                self.alphabet_input = "".to_owned();
+                if !self.alphabet_input.is_empty() {
+                    if let Err(error) = scrambler::add_to_alphabet(&self.alphabet_input) {
+                        error!("{}", error.to_string());
+                    }
+                    self.alphabet_input = "".to_owned();
 
-                match scrambler::storage::load_alphabet() {
-                    Ok(alphabet) => self.current_alphabet = alphabet,
-                    Err(error) => error!("{}", error.to_string()),
+                    match scrambler::storage::load_alphabet() {
+                        Ok(alphabet) => self.current_alphabet = alphabet,
+                        Err(error) => error!("{}", error.to_string()),
+                    }
                 }
             }
         }
