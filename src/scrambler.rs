@@ -27,8 +27,7 @@ impl Translation {
     }
 }
 
-// todo remove Eq and Ord in favor of lambda functions when sorting/searching
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Glyph {
     pub symbol: String,
     pub time_added: SystemTime,
@@ -81,16 +80,23 @@ pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
         panic!("Expected a non-whitespace character. Received whitespace.")
     }
 
-    let mut alphabet = storage::load_alphabet()?;
+    let mut current_alphabet = match storage::load_alphabet() {
+        Ok(alphabet) => alphabet,
+        Err(error) => {
+            error!("{error}");
+            Vec::new()
+        }
+    };
     let glyph = Glyph::new(character.to_owned());
 
-    // todo: this check always succeeds. The glyphs have a timestamp that is always different...
-    // use iter().any() instead
-    if !alphabet.contains(&glyph) {
-        alphabet.push(glyph)
+    if !current_alphabet
+        .iter()
+        .any(|char| char.symbol == glyph.symbol)
+    {
+        current_alphabet.push(glyph)
     }
 
-    storage::save_alphabet(&alphabet)
+    storage::save_alphabet(&current_alphabet)
 }
 
 fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
