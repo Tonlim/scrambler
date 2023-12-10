@@ -35,6 +35,13 @@ pub fn load_alphabet() -> Result<Vec<Glyph>, Box<dyn Error>> {
     load_from_file(ALPHABET_FILENAME)
 }
 
+pub async fn load_alphabet_async() -> Result<Vec<Glyph>, String> {
+    match load_alphabet() {
+        Ok(glyphs) => Ok(glyphs),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
 pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
     let mut sorted_alphabet = alphabet.clone();
     sorted_alphabet.sort_unstable_by(|l, r| l.symbol.cmp(&r.symbol));

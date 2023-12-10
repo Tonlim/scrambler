@@ -38,6 +38,7 @@ enum Message {
     TranslateWord,
     AlphabetInputChanged(String),
     AddToAlphabet,
+    AlphabetLoaded(Result<Vec<Glyph>, String>),
 }
 
 impl iced::Application for ScramblerUi {
@@ -58,7 +59,10 @@ impl iced::Application for ScramblerUi {
                 current_alphabet: Vec::new(),
             },
             // todo load alphabet from file. See git history
-            Command::none(),
+            Command::perform(
+                scrambler::storage::load_alphabet_async(),
+                Message::AlphabetLoaded,
+            ),
         )
     }
 
@@ -101,6 +105,10 @@ impl iced::Application for ScramblerUi {
                     }
                 }
             }
+            Message::AlphabetLoaded(alphabet_result) => match alphabet_result {
+                Ok(alphabet) => self.current_alphabet = alphabet,
+                Err(error) => error!("{error}"),
+            },
         }
 
         Command::none()
