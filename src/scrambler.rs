@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use log::error;
 use regex::Regex;
 use serde::Deserialize;
 use serde::Serialize;
@@ -48,21 +47,8 @@ pub fn is_word_known(word: &str) -> Result<bool, Box<dyn Error>> {
         return Ok(true);
     }
 
-    let known_translations = match storage::load_translated_words() {
-        Ok(translations) => translations,
-        Err(error) => {
-            error!("{error}");
-            HashMap::new()
-        }
-    };
-
-    let blocked_translations = match storage::load_blocked_translations() {
-        Ok(blocked) => blocked,
-        Err(error) => {
-            error!("{error}");
-            Vec::new()
-        }
-    };
+    let known_translations = storage::load_translated_words();
+    let blocked_translations = storage::load_blocked_translations();
     Ok(blocked_translations.contains(&word) || word_has_translation(&word, &known_translations))
 }
 
@@ -80,13 +66,7 @@ pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {
 }
 
 pub fn save_translation(word: &str, translation: Translation) -> Result<(), Box<dyn Error>> {
-    let mut known_translations = match storage::load_translated_words() {
-        Ok(translations) => translations,
-        Err(error) => {
-            error!("{error}");
-            HashMap::new()
-        }
-    };
+    let mut known_translations = storage::load_translated_words();
     known_translations.insert(word.to_owned(), translation);
 
     storage::save_translated_words(&known_translations)
@@ -117,13 +97,7 @@ pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
         panic!("Expected a non-whitespace character. Received whitespace.")
     }
 
-    let mut current_alphabet = match storage::load_alphabet() {
-        Ok(alphabet) => alphabet,
-        Err(error) => {
-            error!("{error}");
-            Vec::new()
-        }
-    };
+    let mut current_alphabet = storage::load_alphabet();
     let glyph = Glyph::new(character.to_owned());
 
     if !current_alphabet
@@ -137,26 +111,14 @@ pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn add_to_block_list(word: &str) -> Result<(), Box<dyn Error>> {
-    let mut blocked_translations = match storage::load_blocked_translations() {
-        Ok(blocked) => blocked,
-        Err(error) => {
-            error!("{error}");
-            Vec::new()
-        }
-    };
+    let mut blocked_translations = storage::load_blocked_translations();
     blocked_translations.push(word.to_owned());
 
     storage::save_blocked_translations(blocked_translations)
 }
 
 fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
-    let known_translations = match storage::load_translated_words() {
-        Ok(translations) => translations,
-        Err(error) => {
-            error!("{error}");
-            HashMap::new()
-        }
-    };
+    let known_translations = storage::load_translated_words();
 
     let word = strip_punctuation(word);
     if word.trim().is_empty() {
@@ -170,13 +132,7 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
         return Ok(known_translations[&word].clone());
     }
 
-    let blocked_translations = match storage::load_blocked_translations() {
-        Ok(blocked) => blocked,
-        Err(error) => {
-            error!("{error}");
-            Vec::new()
-        }
-    };
+    let blocked_translations = storage::load_blocked_translations();
 
     let mut new_translation = generator::new_translation(&word)?;
     while translation_is_rejected(&new_translation, &blocked_translations, &known_translations) {

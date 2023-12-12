@@ -19,8 +19,14 @@ const TRANSLATED_WORDS_FILENAME: &str = "translated_words";
 const ALPHABET_FILENAME: &str = "alphabet";
 const BLOCKED_TRANSLATIONS_FILENAME: &str = "blocked_translations";
 
-pub fn load_translated_words() -> Result<HashMap<String, Translation>, Box<dyn Error>> {
-    load_from_file(TRANSLATED_WORDS_FILENAME)
+pub fn load_translated_words() -> HashMap<String, Translation> {
+    match load_from_file(TRANSLATED_WORDS_FILENAME) {
+        Ok(translations) => translations,
+        Err(error) => {
+            error!("{error}");
+            HashMap::new()
+        }
+    }
 }
 
 pub fn save_translated_words(words: &HashMap<String, Translation>) -> Result<(), Box<dyn Error>> {
@@ -31,15 +37,18 @@ pub fn save_translated_words(words: &HashMap<String, Translation>) -> Result<(),
     save_to_file(&sorted_words, TRANSLATED_WORDS_FILENAME)
 }
 
-pub fn load_alphabet() -> Result<Vec<Glyph>, Box<dyn Error>> {
-    load_from_file(ALPHABET_FILENAME)
+pub fn load_alphabet() -> Vec<Glyph> {
+    match load_from_file(ALPHABET_FILENAME) {
+        Ok(alphabet) => alphabet,
+        Err(error) => {
+            error!("{error}");
+            Vec::new()
+        }
+    }
 }
 
-pub async fn load_alphabet_async() -> Result<Vec<Glyph>, String> {
-    match load_alphabet() {
-        Ok(glyphs) => Ok(glyphs),
-        Err(error) => Err(error.to_string()),
-    }
+pub async fn load_alphabet_async() -> Vec<Glyph> {
+    load_alphabet()
 }
 
 pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
@@ -48,8 +57,14 @@ pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
     save_to_file(&sorted_alphabet, ALPHABET_FILENAME)
 }
 
-pub fn load_blocked_translations() -> Result<Vec<String>, Box<dyn Error>> {
-    load_from_file(BLOCKED_TRANSLATIONS_FILENAME)
+pub fn load_blocked_translations() -> Vec<String> {
+    match load_from_file(BLOCKED_TRANSLATIONS_FILENAME) {
+        Ok(blocked) => blocked,
+        Err(error) => {
+            error!("{error}");
+            Vec::new()
+        }
+    }
 }
 
 pub fn save_blocked_translations(translations: Vec<String>) -> Result<(), Box<dyn Error>> {

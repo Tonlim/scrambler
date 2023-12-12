@@ -43,7 +43,7 @@ enum Message {
     TranslationBlocked(String),
     AlphabetInputChanged(String),
     AddToAlphabet,
-    AlphabetLoaded(Result<Vec<Glyph>, String>),
+    AlphabetLoaded(Vec<Glyph>),
 }
 
 impl iced::Application for ScramblerUi {
@@ -109,16 +109,10 @@ impl iced::Application for ScramblerUi {
                     }
                     self.alphabet_input = "".to_owned();
 
-                    match scrambler::storage::load_alphabet() {
-                        Ok(alphabet) => self.current_alphabet = alphabet,
-                        Err(error) => error!("{}", error.to_string()),
-                    }
+                    self.current_alphabet = scrambler::storage::load_alphabet();
                 }
             }
-            Message::AlphabetLoaded(alphabet_result) => match alphabet_result {
-                Ok(alphabet) => self.current_alphabet = alphabet,
-                Err(error) => error!("{error}"),
-            },
+            Message::AlphabetLoaded(alphabet_result) => self.current_alphabet = alphabet_result,
         }
 
         Command::none()

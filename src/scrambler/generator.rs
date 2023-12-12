@@ -10,7 +10,7 @@ use super::Glyph;
 use super::Translation;
 
 pub fn new_translation(word: &str) -> Result<Translation, Box<dyn Error>> {
-    let alphabet = storage::load_alphabet()?;
+    let alphabet = storage::load_alphabet();
 
     let original_length = word.graphemes(true).count();
     let mut result = create_random_word(&alphabet, original_length);
