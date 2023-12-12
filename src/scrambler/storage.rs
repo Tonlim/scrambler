@@ -48,13 +48,13 @@ pub fn save_alphabet(alphabet: &Vec<Glyph>) -> Result<(), Box<dyn Error>> {
     save_to_file(&sorted_alphabet, ALPHABET_FILENAME)
 }
 
-pub fn load_blocked_translations() -> Result<Vec<Translation>, Box<dyn Error>> {
+pub fn load_blocked_translations() -> Result<Vec<String>, Box<dyn Error>> {
     load_from_file(BLOCKED_TRANSLATIONS_FILENAME)
 }
 
-pub fn save_blocked_translations(translations: Vec<Translation>) -> Result<(), Box<dyn Error>> {
+pub fn save_blocked_translations(translations: Vec<String>) -> Result<(), Box<dyn Error>> {
     let mut sorted_translations = translations.clone();
-    sorted_translations.sort_by(|a, b| a.translation.cmp(&b.translation));
+    sorted_translations.sort_unstable();
     save_to_file(&sorted_translations, BLOCKED_TRANSLATIONS_FILENAME)
 }
 

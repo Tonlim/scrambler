@@ -48,10 +48,22 @@ pub fn is_word_known(word: &str) -> Result<bool, Box<dyn Error>> {
         return Ok(true);
     }
 
-    let blocked_translations = storage::load_blocked_translations()?;
-    let known_translations = storage::load_translated_words()?;
-    Ok(translation_is_blocked(&word, &blocked_translations)
-        || word_has_translation(&word, &known_translations))
+    let known_translations = match storage::load_translated_words() {
+        Ok(translations) => translations,
+        Err(error) => {
+            error!("{error}");
+            HashMap::new()
+        }
+    };
+
+    let blocked_translations = match storage::load_blocked_translations() {
+        Ok(blocked) => blocked,
+        Err(error) => {
+            error!("{error}");
+            Vec::new()
+        }
+    };
+    Ok(blocked_translations.contains(&word) || word_has_translation(&word, &known_translations))
 }
 
 pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {
@@ -125,7 +137,16 @@ pub fn add_to_alphabet(character: &str) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn add_to_block_list(word: &str) -> Result<(), Box<dyn Error>> {
-    todo!("Implement block list {word}");
+    let mut blocked_translations = match storage::load_blocked_translations() {
+        Ok(blocked) => blocked,
+        Err(error) => {
+            error!("{error}");
+            Vec::new()
+        }
+    };
+    blocked_translations.push(word.to_owned());
+
+    storage::save_blocked_translations(blocked_translations)
 }
 
 fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
@@ -149,10 +170,13 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
         return Ok(known_translations[&word].clone());
     }
 
-    error!("Using dummy block list of `1`. Proper block list is not implemented yet.");
-    storage::save_blocked_translations(vec![Translation::new("1".to_owned())])?;
-
-    let blocked_translations = storage::load_blocked_translations()?;
+    let blocked_translations = match storage::load_blocked_translations() {
+        Ok(blocked) => blocked,
+        Err(error) => {
+            error!("{error}");
+            Vec::new()
+        }
+    };
 
     let mut new_translation = generator::new_translation(&word)?;
     while translation_is_rejected(&new_translation, &blocked_translations, &known_translations) {
@@ -164,17 +188,11 @@ fn translate_word_impl(word: &str) -> Result<Translation, Box<dyn Error>> {
 
 fn translation_is_rejected(
     new_translation: &Translation,
-    blocked_translations: &Vec<Translation>,
+    blocked_translations: &Vec<String>,
     known_translations: &HashMap<String, Translation>,
 ) -> bool {
-    translation_is_blocked(&new_translation.translation, blocked_translations)
+    blocked_translations.contains(&new_translation.translation)
         || translation_already_exists(new_translation, known_translations)
-}
-
-fn translation_is_blocked(word: &str, blocked_translations: &Vec<Translation>) -> bool {
-    blocked_translations
-        .iter()
-        .any(|blocked_translation| blocked_translation.translation == word)
 }
 
 fn word_has_translation(word: &str, known_translations: &HashMap<String, Translation>) -> bool {
@@ -228,7 +246,7 @@ mod tests {
     #[test]
     fn reject_blocked_translation() {
         let new = Translation::new("foo".to_owned());
-        let blocked = vec![Translation::new("foo".to_owned())];
+        let blocked = vec!["foo".to_owned()];
         let known = HashMap::from([("bar".to_owned(), Translation::new("drink".to_owned()))]);
         assert!(translation_is_rejected(&new, &blocked, &known));
     }
@@ -236,7 +254,7 @@ mod tests {
     #[test]
     fn reject_known_translation() {
         let new = Translation::new("foo".to_owned());
-        let blocked = vec![Translation::new("bar".to_owned())];
+        let blocked = vec!["bar".to_owned()];
         let known = HashMap::from([("hello".to_owned(), Translation::new("foo".to_owned()))]);
         assert!(translation_is_rejected(&new, &blocked, &known));
     }
@@ -244,7 +262,7 @@ mod tests {
     #[test]
     fn accept_new_translation() {
         let new = Translation::new("foo".to_owned());
-        let blocked = vec![Translation::new("bar".to_owned())];
+        let blocked = vec!["bar".to_owned()];
         let known = HashMap::from([("hello".to_owned(), Translation::new("world".to_owned()))]);
         assert!(!translation_is_rejected(&new, &blocked, &known));
     }
