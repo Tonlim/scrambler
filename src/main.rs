@@ -210,11 +210,8 @@ impl ScramblerUi {
 
         match scrambler::translate_word(&self.input_value) {
             Ok(translation) => match scrambler::is_word_known(&self.input_value) {
-                Ok(known) => match known {
-                    true => self.translated_value = Some(translation),
-                    false => self.suggested_translation = Some(translation),
-                },
-                Err(error) => error!("{error}"),
+                true => self.translated_value = Some(translation),
+                false => self.suggested_translation = Some(translation),
             },
             Err(error) => {
                 error!("{error}");
