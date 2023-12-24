@@ -28,7 +28,7 @@ fn main() -> iced::Result {
 
 struct ScramblerUi {
     translated_value: Option<Translation>,
-    suggested_translation: Option<Translation>,
+    suggested_translations: Vec<Translation>,
     input_value: String,
     alphabet_input: String,
     current_alphabet: Vec<Glyph>,
@@ -59,7 +59,7 @@ impl iced::Application for ScramblerUi {
         (
             Self {
                 translated_value: None,
-                suggested_translation: None,
+                suggested_translations: Vec::new(),
                 input_value: "".to_owned(),
                 alphabet_input: "".to_owned(),
                 current_alphabet: Vec::new(),
@@ -140,23 +140,23 @@ impl iced::Application for ScramblerUi {
             translation = row![];
         }
 
-        let suggested_translation;
-        if let Some(value) = &self.suggested_translation {
-            let accept_button = button("Accept translation").on_press(
-                Message::TranslationAccepted(self.input_value.clone(), value.clone()),
-            );
-            let reset_button =
-                button("Generate new translation").on_press(Message::TranslationRejected);
-            let block_button = button("Block translation and generate a new one")
-                .on_press(Message::TranslationBlocked(value.translation.clone()));
-            suggested_translation = row![
-                text(&value.translation),
-                accept_button,
-                reset_button,
-                block_button
-            ];
-        } else {
-            suggested_translation = row![];
+        let mut suggested_translations_view = column![];
+        if !self.suggested_translations.is_empty() {
+            for value in self.suggested_translations.iter() {
+                let accept_button = button("Accept translation").on_press(
+                    Message::TranslationAccepted(self.input_value.clone(), value.clone()),
+                );
+                let reset_button =
+                    button("Generate new translation").on_press(Message::TranslationRejected);
+                let block_button = button("Block translation and generate a new one")
+                    .on_press(Message::TranslationBlocked(value.translation.clone()));
+                suggested_translations_view = suggested_translations_view.push(row![
+                    text(&value.translation),
+                    accept_button,
+                    reset_button,
+                    block_button
+                ]);
+            }
         }
 
         let lookup_feature =
@@ -181,9 +181,14 @@ impl iced::Application for ScramblerUi {
                     .join(""),
         );
 
-        let translation_column = column![input, translation, suggested_translation, lookup_feature]
-            .spacing(20)
-            .max_width(800);
+        let translation_column = column![
+            input,
+            translation,
+            suggested_translations_view,
+            lookup_feature
+        ]
+        .spacing(20)
+        .max_width(800);
 
         let alphabet_column = column![alphabet_input, remove_alphabet_feature, alphabet_text]
             .spacing(20)
@@ -206,12 +211,12 @@ impl iced::Application for ScramblerUi {
 impl ScramblerUi {
     fn translate_input(&mut self) {
         self.translated_value = None;
-        self.suggested_translation = None;
+        self.suggested_translations = Vec::new();
 
         match scrambler::translate_word(&self.input_value) {
             Ok(translation) => match scrambler::is_word_known(&self.input_value) {
                 true => self.translated_value = Some(translation),
-                false => self.suggested_translation = Some(translation),
+                false => self.suggested_translations = vec![translation],
             },
             Err(error) => {
                 error!("{error}");
