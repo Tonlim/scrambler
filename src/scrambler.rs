@@ -48,8 +48,7 @@ pub fn is_word_known(word: &str) -> bool {
     }
 
     let known_translations = storage::load_translated_words();
-    let blocked_translations = storage::load_blocked_translations();
-    blocked_translations.contains(&word) || word_has_translation(&word, &known_translations)
+    word_has_translation(&word, &known_translations)
 }
 
 pub fn translate_word(word: &str) -> Result<Translation, Box<dyn Error>> {

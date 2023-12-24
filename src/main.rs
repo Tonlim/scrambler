@@ -1,5 +1,3 @@
-use chrono::DateTime;
-use chrono::Utc;
 use iced::alignment;
 use iced::widget::button;
 use iced::widget::column;
@@ -27,8 +25,8 @@ fn main() -> iced::Result {
 }
 
 struct ScramblerUi {
-    translated_value: Option<Translation>,
-    suggested_translations: Vec<Translation>,
+    translated_value: Option<String>,
+    suggested_translations: Vec<(String, Translation)>,
     input_value: String,
     alphabet_input: String,
     current_alphabet: Vec<Glyph>,
@@ -133,9 +131,7 @@ impl iced::Application for ScramblerUi {
 
         let translation;
         if let Some(value) = &self.translated_value {
-            let timestamp: DateTime<Utc> = value.time_added.into();
-            let timestamp = timestamp.to_rfc3339();
-            translation = row![text(&value.translation), text(timestamp)].spacing(10);
+            translation = row![text(&value)].spacing(10);
         } else {
             translation = row![];
         }
@@ -144,18 +140,23 @@ impl iced::Application for ScramblerUi {
         if !self.suggested_translations.is_empty() {
             for value in self.suggested_translations.iter() {
                 let accept_button = button("Accept translation").on_press(
-                    Message::TranslationAccepted(self.input_value.clone(), value.clone()),
+                    Message::TranslationAccepted(value.0.clone(), value.1.clone()),
                 );
                 let reset_button =
                     button("Generate new translation").on_press(Message::TranslationRejected);
                 let block_button = button("Block translation and generate a new one")
-                    .on_press(Message::TranslationBlocked(value.translation.clone()));
-                suggested_translations_view = suggested_translations_view.push(row![
-                    text(&value.translation),
-                    accept_button,
-                    reset_button,
-                    block_button
-                ]);
+                    .on_press(Message::TranslationBlocked(value.1.translation.clone()));
+                suggested_translations_view = suggested_translations_view.push(
+                    row![
+                        text(&value.0),
+                        text("->"),
+                        text(&value.1.translation),
+                        accept_button,
+                        reset_button,
+                        block_button
+                    ]
+                    .spacing(10),
+                );
             }
         }
 
@@ -213,14 +214,30 @@ impl ScramblerUi {
         self.translated_value = None;
         self.suggested_translations = Vec::new();
 
-        match scrambler::translate_word(&self.input_value) {
-            Ok(translation) => match scrambler::is_word_known(&self.input_value) {
-                true => self.translated_value = Some(translation),
-                false => self.suggested_translations = vec![translation],
-            },
-            Err(error) => {
-                error!("{error}");
+        let mut translations = vec![];
+        let mut suggested_translations = vec![];
+
+        for word in self.input_value.split_whitespace() {
+            match scrambler::translate_word(&word) {
+                Ok(translation) => match scrambler::is_word_known(&word) {
+                    true => translations.push(translation),
+                    false => suggested_translations.push((word.to_owned(), translation)),
+                },
+                Err(error) => {
+                    error!("{error}");
+                }
             }
+        }
+
+        if suggested_translations.is_empty() {
+            self.translated_value = Some(
+                translations
+                    .iter()
+                    .map(|translation| &translation.translation)
+                    .join(" "),
+            );
+        } else {
+            self.suggested_translations = suggested_translations;
         }
     }
 }
