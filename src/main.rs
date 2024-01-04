@@ -42,6 +42,7 @@ enum Message {
     AlphabetInputChanged(String),
     AddToAlphabet,
     AlphabetLoaded(Vec<Glyph>),
+    DummyToMakeTextInputSelectable(String),
 }
 
 impl iced::Application for ScramblerUi {
@@ -111,6 +112,7 @@ impl iced::Application for ScramblerUi {
                 }
             }
             Message::AlphabetLoaded(alphabet_result) => self.current_alphabet = alphabet_result,
+            Message::DummyToMakeTextInputSelectable(_) => {}
         }
 
         Command::none()
@@ -131,7 +133,9 @@ impl iced::Application for ScramblerUi {
 
         let translation;
         if let Some(value) = &self.translated_value {
-            translation = row![text_input("", &value)].spacing(10);
+            translation =
+                row![text_input("", &value).on_input(Message::DummyToMakeTextInputSelectable)]
+                    .spacing(10);
         } else {
             translation = row![];
         }
@@ -150,7 +154,8 @@ impl iced::Application for ScramblerUi {
                     row![
                         text(&value.0),
                         text("->"),
-                        text_input("", &value.1.translation),
+                        text_input("", &value.1.translation)
+                            .on_input(Message::DummyToMakeTextInputSelectable),
                         accept_button,
                         reset_button,
                         block_button
@@ -188,7 +193,8 @@ And Hebrew is not supported.");
                 .iter()
                 .map(|glyph| &glyph.symbol)
                 .join(""),
-        );
+        )
+        .on_input(Message::DummyToMakeTextInputSelectable);
 
         let translation_column = column![
             input,
