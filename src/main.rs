@@ -131,7 +131,7 @@ impl iced::Application for ScramblerUi {
 
         let translation;
         if let Some(value) = &self.translated_value {
-            translation = row![text(&value)].spacing(10);
+            translation = row![text_input("", &value)].spacing(10);
         } else {
             translation = row![];
         }
@@ -150,7 +150,7 @@ impl iced::Application for ScramblerUi {
                     row![
                         text(&value.0),
                         text("->"),
-                        text(&value.1.translation),
+                        text_input("", &value.1.translation),
                         accept_button,
                         reset_button,
                         block_button
@@ -163,6 +163,12 @@ impl iced::Application for ScramblerUi {
         let lookup_feature =
             text("For looking up existing words, please search the file in the data directory.");
 
+        let proper_unicode_support = text("Iced does not properly support Unicode.
+It will accept Latin and Greek in both input fields and text fields. It will accept Elder Futhark in input fields, but won't render it in text fields.
+It crashes on Hebrew.
+So, until either Iced implement proper Unicode support or I get around to replacing Iced with a web UI, all text fields that contain letters from the alphabet are input fields. This hard to read and even worse to copy pasted. But it's something at least...
+And Hebrew is not supported.");
+
         let alphabet_input = text_input(
             "Which letter needs to be added to the alphabet?",
             &self.alphabet_input,
@@ -173,31 +179,39 @@ impl iced::Application for ScramblerUi {
 
         let remove_alphabet_feature = text("For removing a character from the alphabet, please remove it from the file in the data directory.");
 
-        let alphabet_text = text(
-            "The current alphabet is: ".to_owned()
-                + &self
-                    .current_alphabet
-                    .iter()
-                    .map(|glyph| &glyph.symbol)
-                    .join(""),
+        let alphabet_text = text("The current alphabet is: ");
+
+        let alphabet_value = text_input(
+            "",
+            &self
+                .current_alphabet
+                .iter()
+                .map(|glyph| &glyph.symbol)
+                .join(""),
         );
 
         let translation_column = column![
             input,
             translation,
             suggested_translations_view,
-            lookup_feature
+            lookup_feature,
+            proper_unicode_support
         ]
         .spacing(20)
-        .max_width(800);
+        .max_width(1200);
 
-        let alphabet_column = column![alphabet_input, remove_alphabet_feature, alphabet_text]
-            .spacing(20)
-            .max_width(800);
+        let alphabet_column = column![
+            alphabet_input,
+            remove_alphabet_feature,
+            alphabet_text,
+            alphabet_value
+        ]
+        .spacing(20)
+        .max_width(600);
 
         let body = row![translation_column, alphabet_column];
 
-        let content = column![title, body].spacing(20).max_width(1600);
+        let content = column![title, body].spacing(20).max_width(1800);
 
         scrollable(
             container(content)
